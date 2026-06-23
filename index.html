@@ -1,1 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Clientes - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>💼 GESTOR</h1>
+                <p>Gestão de Clientes</p>
+            </div>
+            <nav class="menu">
+                <button class="menu-btn active" data-section="dashboard">📊 Dashboard</button>
+                <button class="menu-btn" data-section="clientes">👥 Clientes</button>
+                <button class="menu-btn" data-section="adicionar">➕ Adicionar Cliente</button>
+                <button class="menu-btn" data-section="relatorios">📈 Relatórios</button>
+            </nav>
+        </aside>
 
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <header class="header">
+                <h2 id="page-title">Dashboard</h2>
+                <div class="user-info">
+                    <span id="data-atual"></span>
+                </div>
+            </header>
+
+            <!-- SECTION: DASHBOARD -->
+            <section id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3>Total de Clientes</h3>
+                            <p id="total-clientes">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <h3>Pagos</h3>
+                            <p id="total-pagos">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-content">
+                            <h3>Pendentes</h3>
+                            <p id="total-pendentes">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-content">
+                            <h3>Cancelados</h3>
+                            <p id="total-cancelados">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <h3>Status de Pagamento</h3>
+                        <canvas id="chartPizza"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Clientes por Dia</h3>
+                        <canvas id="chartBarra"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: CLIENTES -->
+            <section id="clientes" class="section">
+                <div class="search-bar">
+                    <input type="text" id="buscar-cliente" placeholder="🔍 Buscar cliente...">
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Unidade</th>
+                                <th>Dia</th>
+                                <th>Horário</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-clientes">
+                            <tr>
+                                <td colspan="6" style="text-align: center;">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SECTION: ADICIONAR CLIENTE -->
+            <section id="adicionar" class="section">
+                <div class="form-container">
+                    <h3>Cadastrar Novo Cliente</h3>
+                    <form id="form-cliente">
+                        <div class="form-group">
+                            <label>Nome da Cliente</label>
+                            <input type="text" id="nome" placeholder="Digite o nome" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Unidade que Visita</label>
+                            <input type="text" id="unidade" placeholder="Ex: Unidade SP-01" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Dia da Semana</label>
+                                <select id="dia" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Segunda">Segunda-feira</option>
+                                    <option value="Terça">Terça-feira</option>
+                                    <option value="Quarta">Quarta-feira</option>
+                                    <option value="Quinta">Quinta-feira</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Horário</label>
+                                <input type="time" id="horario" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Status de Pagamento</label>
+                            <select id="status" required>
+                                <option value="">Selecione...</option>
+                                <option value="Pago">✅ Pago</option>
+                                <option value="Concluído">✅ Concluído</option>
+                                <option value="Pendente">⏳ Pendente</option>
+                                <option value="Cancelado">❌ Cancelado</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-submit">Adicionar Cliente</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION: RELATÓRIOS -->
+            <section id="relatorios" class="section">
+                <div class="relatorio-container">
+                    <h3>Resumo de Vendas e Clientes</h3>
+                    <div class="relatorio-stats">
+                        <div class="relatorio-card">
+                            <h4>📊 Total de Clientes</h4>
+                            <p id="rel-total">0</p>
+                        </div>
+                        <div class="relatorio-card">
+                            <h4>💰 Vendas Concluídas</h4>
+                            <p id="rel-concluido">0</p>
+                        </div>
+                        <div class="relatorio-card">
+                            <h4>⏳ Pendências</h4>
+                            <p id="rel-pendente">0</p>
+                        </div>
+                        <div class="relatorio-card">
+                            <h4>📉 Taxa de Conversão</h4>
+                            <p id="rel-taxa">0%</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL PARA EDITAR STATUS -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Status</h2>
+            <div class="modal-body">
+                <p id="modal-cliente-nome"></p>
+                <select id="modal-status">
+                    <option value="Pago">✅ Pago</option>
+                    <option value="Concluído">✅ Concluído</option>
+                    <option value="Pendente">⏳ Pendente</option>
+                    <option value="Cancelado">❌ Cancelado</option>
+                </select>
+                <div class="modal-actions">
+                    <button class="btn-salvar" id="btn-salvar-status">Salvar</button>
+                    <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
