@@ -1,15 +1,26 @@
-// CONFIGURAÇÃO SUPABASE
-const SUPABASE_URL = 'sb_publishable_hpfV7uPE_AggduxsifnVIA_dHiCVxnF'; // Coloque sua URL
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YnNwc3pwaG5sbmdxdmN3anVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDk3MDMsImV4cCI6MjA5NzgyNTcwM30.MKM-N5VM5oW9bdfgiakSaf3NKqgI1EesL-UdV0RfbWs'; // Coloque sua chave
+// ========== CONFIGURAÇÃO SUPABASE ==========
+const SUPABASE_URL = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YnNwc3pwaG5sbmdxdmN3anVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDk3MDMsImV4cCI6MjA5NzgyNTcwM30.MKM-N5VM5oW9bdfgiakSaf3NKqgI1EesL-UdV0RfbWs';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YnNwc3pwaG5sbmdxdmN3anVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI0OTcwMywiZXhwIjoyMDk3ODI1NzAzfQ.8iCwKiMs4oClUXWSSPYX6SW3hk1UhWsFul1Fwz3rIIc';
 
-const { createClient } = window.supabase;
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
+// Evitar redeclaração
+let supabase = null;
 let clienteAtualId = null;
 let clientes = [];
 
+// Inicializar Supabase
+if (window.supabase) {
+    const { createClient } = window.supabase;
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
 // ========== INICIALIZAÇÃO ==========
 document.addEventListener('DOMContentLoaded', () => {
+    if (!supabase) {
+        console.error('❌ Erro: Supabase não foi inicializado. Verifique a URL e a chave.');
+        alert('Erro ao conectar ao banco de dados. Verifique o console.');
+        return;
+    }
+
     atualizarData();
     carregarClientes();
     inicializarGraficos();
@@ -71,7 +82,10 @@ async function carregarClientes() {
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Erro ao carregar clientes:', error);
+            throw error;
+        }
         
         clientes = data || [];
         atualizarTabela();
@@ -79,7 +93,8 @@ async function carregarClientes() {
         atualizarGraficos();
     } catch (erro) {
         console.error('Erro ao carregar clientes:', erro);
-        alert('Erro ao carregar dados. Verifique sua conexão com Supabase.');
+        document.getElementById('tabela-clientes').innerHTML = 
+            '<tr><td colspan="6" style="text-align: center; color: #e74c3c;">❌ Erro ao conectar. Verifique suas credenciais Supabase.</td></tr>';
     }
 }
 
@@ -109,7 +124,7 @@ async function adicionarCliente(e) {
         carregarClientes();
     } catch (erro) {
         console.error('Erro ao adicionar cliente:', erro);
-        alert('Erro ao adicionar cliente. Tente novamente.');
+        alert('❌ Erro ao adicionar cliente:\n' + erro.message);
     }
 }
 
@@ -127,7 +142,7 @@ async function atualizarStatusCliente(id, novoStatus) {
         carregarClientes();
     } catch (erro) {
         console.error('Erro ao atualizar status:', erro);
-        alert('Erro ao atualizar status.');
+        alert('❌ Erro ao atualizar status:\n' + erro.message);
     }
 }
 
@@ -146,7 +161,7 @@ async function deletarCliente(id) {
         carregarClientes();
     } catch (erro) {
         console.error('Erro ao deletar:', erro);
-        alert('Erro ao deletar cliente.');
+        alert('❌ Erro ao deletar cliente:\n' + erro.message);
     }
 }
 
@@ -264,8 +279,16 @@ let chartBarra = null;
 
 function inicializarGraficos() {
     // Gráfico Pizza
-    const ctxPizza = document.getElementById('chartPizza').getContext('2d');
-    chartPizza = new Chart(ctxPizza, {
+    const ctxPizza = document.getElementById('chartPizza');
+    if (!ctxPizza) return;
+    
+    const contexto1 = ctxPizza.getContext('2d');
+    
+    if (chartPizza) {
+        chartPizza.destroy();
+    }
+    
+    chartPizza = new Chart(contexto1, {
         type: 'doughnut',
         data: {
             labels: ['Pago/Concluído', 'Pendente', 'Cancelado'],
@@ -299,8 +322,16 @@ function inicializarGraficos() {
     });
 
     // Gráfico Barra
-    const ctxBarra = document.getElementById('chartBarra').getContext('2d');
-    chartBarra = new Chart(ctxBarra, {
+    const ctxBarra = document.getElementById('chartBarra');
+    if (!ctxBarra) return;
+    
+    const contexto2 = ctxBarra.getContext('2d');
+    
+    if (chartBarra) {
+        chartBarra.destroy();
+    }
+    
+    chartBarra = new Chart(contexto2, {
         type: 'bar',
         data: {
             labels: ['Segunda', 'Terça', 'Quarta', 'Quinta'],
@@ -338,6 +369,8 @@ function inicializarGraficos() {
 }
 
 function atualizarGraficos() {
+    if (!chartPizza || !chartBarra) return;
+
     // Pizza
     const pagos = clientes.filter(c => c.status === 'Pago' || c.status === 'Concluído').length;
     const pendentes = clientes.filter(c => c.status === 'Pendente').length;
