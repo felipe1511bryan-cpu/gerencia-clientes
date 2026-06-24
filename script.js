@@ -1,5 +1,5 @@
 // ========== CONFIGURAÇÃO SUPABASE ==========
-const SUPABASE_URL = 'https://oubspszphnlngqvcwjuk.supabase.co';
+const SUPABASE_URL = 'https://yxbizwnfqanlojydjanw.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YnNwc3pwaG5sbmdxdmN3anVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDk3MDMsImV4cCI6MjA5NzgyNTcwM30.MKM-N5VM5oW9bdfgiakSaf3NKqgI1EesL-UdV0RfbWs'; // Cole aqui!
 
 // Inicializar Supabase apenas UMA VEZ
