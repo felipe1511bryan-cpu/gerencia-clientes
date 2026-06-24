@@ -1,6 +1,6 @@
 // ========== CONFIGURAÇÃO SUPABASE ==========
 const SUPABASE_URL = 'https://yxbizwnfqanlojydjanw.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4Yml6d25mcWFubG9qeWRqYW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTkxMjM0NTYsImV4cCI6MTg3Njg5MDI1Nn0.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4Yml6d25mcWFubG9qeWRqYW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTkxMjM0NTYsImV4cCI6MTg3Njg5MDI1Nn0';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4Yml6d25mcWFubG9qeWRqYW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDI4NzEsImV4cCI6MjA5NzgxODg3MX0.QlH2vi52_6d-UzwxInKWOtRSwuPVEUnWOV8UbM_fHIM';
 // Inicializar Supabase apenas UMA VEZ
 let supabaseClient = null;
 
