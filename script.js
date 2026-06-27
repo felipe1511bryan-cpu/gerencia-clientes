@@ -21,6 +21,20 @@ const CORES = ['#c9a84c','#2dbd7a','#3b82f6','#8b5cf6','#d94040','#e8a020','#ec4
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', async () => {
     if (!supabaseClient) { showToast('❌ Supabase não conectado', 'error'); return; }
+    
+    // Autenticação anônima
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+            const { error } = await supabaseClient.auth.signInAnonymously();
+            if (error) throw error;
+        }
+    } catch (err) {
+        console.error('Erro autenticação:', err);
+        showToast('❌ Erro ao conectar', 'error');
+        return;
+    }
+    
     atualizarData();
     inicializarGraficos();
     setupNavegacao();
@@ -95,10 +109,6 @@ async function carregarGrupos() {
 async function criarGrupo(nome, cor) {
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
-            showToast('❌ Você precisa estar autenticado', 'error');
-            return;
-        }
         
         const { error } = await supabaseClient.from('grupos').insert([{ 
             nome: nome.trim(), 
@@ -273,10 +283,6 @@ function atualizarTudo() {
 async function adicionarCliente(e) {
     e.preventDefault();
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-        showToast('❌ Você precisa estar autenticado', 'error');
-        return;
-    }
     
     const grupos = getGruposSelecionados('form-grupos-list');
     const novoCliente = {
@@ -501,7 +507,7 @@ function atualizarGraficos() {
         ];
         chartPizza.update();
     }
-   if (chartBarra) {
+    if (chartBarra) {
         chartBarra.data.datasets[0].data = DIAS.map(d => c.filter(x=>x.dia===d).length);
         chartBarra.update();
     }
