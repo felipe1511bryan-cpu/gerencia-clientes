@@ -3,121 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Clientes - Dashboard</title>
+    <title>Gestor de Clientes</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="logo">
-                <h1>💼 GESTOR</h1>
-                <p>Gestão de Clientes</p>
+
+<div class="app-layout">
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon">💼</div>
+                <h1>GESTOR</h1>
             </div>
-            <nav class="menu">
-                <button class="menu-btn active" data-section="dashboard">📊 Dashboard</button>
-                <button class="menu-btn" data-section="clientes">👥 Clientes</button>
-                <button class="menu-btn" data-section="adicionar">➕ Adicionar Cliente</button>
-                <button class="menu-btn" data-section="relatorios">📈 Relatórios</button>
-            </nav>
-        </aside>
+            <div class="brand-sub">Gestão de Clientes</div>
+        </div>
 
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            <!-- HEADER -->
-            <header class="header">
-                <h2 id="page-title">Dashboard</h2>
-                <div class="user-info">
-                    <span id="data-atual"></span>
-                </div>
-            </header>
+        <nav class="sidebar-nav">
+            <div class="nav-label">Menu</div>
+            <button class="nav-btn active" data-section="dashboard">
+                <span class="nav-icon">📊</span> Dashboard
+            </button>
+            <button class="nav-btn" data-section="clientes">
+                <span class="nav-icon">👥</span> Clientes
+            </button>
+            <button class="nav-btn" data-section="adicionar">
+                <span class="nav-icon">➕</span> Adicionar Cliente
+            </button>
+            <button class="nav-btn" data-section="relatorios">
+                <span class="nav-icon">📈</span> Relatórios
+            </button>
+        </nav>
 
-            <!-- SECTION: DASHBOARD -->
+        <!-- Week switcher -->
+        <div class="week-switcher">
+            <div class="week-switcher-label">Semana</div>
+            <div class="week-tabs">
+                <button class="week-tab active" data-week="atual" id="tab-atual">
+                    📅 Semana<br>Atual
+                </button>
+                <button class="week-tab" data-week="proxima" id="tab-proxima">
+                    🔜 Próxima<br>Semana
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="hamburger" id="hamburger">☰</button>
+                <span class="page-title" id="page-title">Dashboard</span>
+                <span class="week-badge" id="week-badge">Semana Atual</span>
+            </div>
+            <div class="header-right">
+                <span class="date-chip" id="data-atual"></span>
+            </div>
+        </header>
+
+        <div class="content-area">
+
+            <!-- DASHBOARD -->
             <section id="dashboard" class="section active">
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-content">
-                            <h3>Total de Clientes</h3>
-                            <p id="total-clientes">0</p>
-                        </div>
+                    <div class="stat-card total">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-value" id="total-clientes">0</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">✅</div>
-                        <div class="stat-content">
-                            <h3>Pagos</h3>
-                            <p id="total-pagos">0</p>
-                        </div>
+                    <div class="stat-card pagos">
+                        <div class="stat-label">Concluídas</div>
+                        <div class="stat-value" id="total-pagos">0</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-content">
-                            <h3>Pendentes</h3>
-                            <p id="total-pendentes">0</p>
-                        </div>
+                    <div class="stat-card pendentes">
+                        <div class="stat-label">Pendentes</div>
+                        <div class="stat-value" id="total-pendentes">0</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">❌</div>
-                        <div class="stat-content">
-                            <h3>Cancelados</h3>
-                            <p id="total-cancelados">0</p>
-                        </div>
+                    <div class="stat-card cancelados">
+                        <div class="stat-label">Canceladas</div>
+                        <div class="stat-value" id="total-cancelados">0</div>
                     </div>
                 </div>
 
-                <div class="charts-container">
-                    <div class="chart-box">
-                        <h3>Status de Pagamento</h3>
-                        <canvas id="chartPizza"></canvas>
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <h3>Status</h3>
+                        <div class="chart-wrap">
+                            <canvas id="chartPizza"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-box">
+                    <div class="chart-card">
                         <h3>Clientes por Dia</h3>
-                        <canvas id="chartBarra"></canvas>
+                        <div class="chart-wrap">
+                            <canvas id="chartBarra"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION: CLIENTES -->
+            <!-- CLIENTES -->
             <section id="clientes" class="section">
-                <div class="search-bar">
-                    <input type="text" id="buscar-cliente" placeholder="🔍 Buscar cliente...">
+                <div class="section-header">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <h2>Clientes</h2>
+                        <span class="week-context-badge" id="clientes-week-badge">📅 Semana Atual</span>
+                    </div>
+                    <div class="header-actions">
+                        <input type="text" class="search-input" id="buscar-cliente" placeholder="Buscar cliente...">
+                        <button class="btn-primary" onclick="mudarSecao('adicionar')">
+                            + Adicionar
+                        </button>
+                    </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Unidade</th>
-                                <th>Dia</th>
-                                <th>Horário</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-clientes">
-                            <tr>
-                                <td colspan="6" style="text-align: center;">Carregando...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div id="lista-clientes-container"></div>
             </section>
 
-            <!-- SECTION: ADICIONAR CLIENTE -->
+            <!-- ADICIONAR -->
             <section id="adicionar" class="section">
-                <div class="form-container">
-                    <h3>Cadastrar Novo Cliente</h3>
+                <div class="form-card">
+                    <h2>Nova Cliente</h2>
+                    <p class="form-sub">Preencha os dados para cadastrar uma nova cliente</p>
+
+                    <div style="margin-bottom:18px;">
+                        <div class="nav-label" style="margin-bottom:8px;">Semana</div>
+                        <div class="week-select-row">
+                            <button class="week-select-btn selected" data-week="atual" id="form-week-atual">
+                                <span class="ws-emoji">📅</span>
+                                Semana Atual
+                            </button>
+                            <button class="week-select-btn" data-week="proxima" id="form-week-proxima">
+                                <span class="ws-emoji">🔜</span>
+                                Próxima Semana
+                            </button>
+                        </div>
+                    </div>
+
                     <form id="form-cliente">
                         <div class="form-group">
                             <label>Nome da Cliente</label>
-                            <input type="text" id="nome" placeholder="Digite o nome" required>
+                            <input type="text" id="nome" placeholder="Ex: Maria Silva" required>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label>Unidade que Visita</label>
-                            <input type="text" id="unidade" placeholder="Ex: Unidade SP-01" required>
+                            <label>Unidade</label>
+                            <input type="text" id="unidade" placeholder="Ex: SP-01" required>
                         </div>
 
                         <div class="form-row">
@@ -131,7 +166,6 @@
                                     <option value="Quinta">Quinta-feira</option>
                                 </select>
                             </div>
-
                             <div class="form-group">
                                 <label>Horário</label>
                                 <input type="time" id="horario" required>
@@ -139,12 +173,12 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Status de Pagamento</label>
+                            <label>Status</label>
                             <select id="status" required>
                                 <option value="">Selecione...</option>
+                                <option value="Pendente">⏳ Pendente</option>
                                 <option value="Pago">✅ Pago</option>
                                 <option value="Concluído">✅ Concluído</option>
-                                <option value="Pendente">⏳ Pendente</option>
                                 <option value="Cancelado">❌ Cancelado</option>
                             </select>
                         </div>
@@ -154,54 +188,61 @@
                 </div>
             </section>
 
-            <!-- SECTION: RELATÓRIOS -->
+            <!-- RELATÓRIOS -->
             <section id="relatorios" class="section">
-                <div class="relatorio-container">
-                    <h3>Resumo de Vendas e Clientes</h3>
-                    <div class="relatorio-stats">
-                        <div class="relatorio-card">
-                            <h4>📊 Total de Clientes</h4>
-                            <p id="rel-total">0</p>
-                        </div>
-                        <div class="relatorio-card">
-                            <h4>💰 Vendas Concluídas</h4>
-                            <p id="rel-concluido">0</p>
-                        </div>
-                        <div class="relatorio-card">
-                            <h4>⏳ Pendências</h4>
-                            <p id="rel-pendente">0</p>
-                        </div>
-                        <div class="relatorio-card">
-                            <h4>📉 Taxa de Conversão</h4>
-                            <p id="rel-taxa">0%</p>
-                        </div>
+                <div class="section-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <h2>Relatórios</h2>
+                        <span class="week-context-badge" id="relatorios-week-badge">📅 Semana Atual</span>
+                    </div>
+                </div>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h4>Total de Clientes</h4>
+                        <div class="report-val" id="rel-total">0</div>
+                    </div>
+                    <div class="report-card green">
+                        <h4>Concluídas</h4>
+                        <div class="report-val" id="rel-concluido">0</div>
+                    </div>
+                    <div class="report-card yellow">
+                        <h4>Pendências</h4>
+                        <div class="report-val" id="rel-pendente">0</div>
+                    </div>
+                    <div class="report-card blue">
+                        <h4>Taxa de Conversão</h4>
+                        <div class="report-val" id="rel-taxa">0%</div>
                     </div>
                 </div>
             </section>
-        </main>
-    </div>
 
-    <!-- MODAL PARA EDITAR STATUS -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Editar Status</h2>
-            <div class="modal-body">
-                <p id="modal-cliente-nome"></p>
-                <select id="modal-status">
-                    <option value="Pago">✅ Pago</option>
-                    <option value="Concluído">✅ Concluído</option>
-                    <option value="Pendente">⏳ Pendente</option>
-                    <option value="Cancelado">❌ Cancelado</option>
-                </select>
-                <div class="modal-actions">
-                    <button class="btn-salvar" id="btn-salvar-status">Salvar</button>
-                    <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
-                </div>
-            </div>
         </div>
     </div>
+</div>
 
-    <script src="script.js"></script>
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-box">
+        <h2>Editar Cliente</h2>
+        <p class="modal-subtitle" id="modal-cliente-nome"></p>
+
+        <button class="move-week-btn" id="btn-mover-semana" style="display:none;"></button>
+
+        <div class="nav-label" style="margin-bottom:8px;">Status</div>
+        <select id="modal-status">
+            <option value="Pendente">⏳ Pendente</option>
+            <option value="Pago">✅ Pago</option>
+            <option value="Concluído">✅ Concluído</option>
+            <option value="Cancelado">❌ Cancelado</option>
+        </select>
+
+        <div class="modal-actions">
+            <button class="btn-save" id="btn-salvar-status">Salvar</button>
+            <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
