@@ -239,7 +239,15 @@ function getGruposSelecionados(containerId) {
 // ========== SUPABASE CLIENTES ==========
 async function carregarClientes() {
     try {
-        const { data, error } = await supabaseClient.from('clientes').select('*').order('dia').order('horario');
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+        
+        const { data, error } = await supabaseClient
+            .from('clientes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('dia')
+            .order('horario');
         if (error) throw error;
         todosClientes = data || [];
         atualizarTudo();
@@ -264,6 +272,12 @@ function atualizarTudo() {
 
 async function adicionarCliente(e) {
     e.preventDefault();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+        showToast('❌ Você precisa estar autenticado', 'error');
+        return;
+    }
+    
     const grupos = getGruposSelecionados('form-grupos-list');
     const novoCliente = {
         nome: document.getElementById('nome').value.trim(),
@@ -271,7 +285,8 @@ async function adicionarCliente(e) {
         dia: document.getElementById('dia').value,
         horario: document.getElementById('horario').value,
         status: document.getElementById('status').value,
-        grupos: grupos
+        grupos: grupos,
+        user_id: user.id
     };
     try {
         const { error } = await supabaseClient.from('clientes').insert([novoCliente]);
@@ -486,10 +501,15 @@ function atualizarGraficos() {
         ];
         chartPizza.update();
     }
-    if (chartBarra) {
+   if (chartBarra) {
         chartBarra.data.datasets[0].data = DIAS.map(d => c.filter(x=>x.dia===d).length);
         chartBarra.update();
     }
+}
+
+// ========== FORM ==========
+function setupForm() {
+    document.getElementById('form-cliente')?.addEventListener('submit', adicionarCliente);
 }
 
 // ========== HELPERS ==========
