@@ -9,12 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
 <div class="app-layout">
-    <!-- Sidebar overlay (mobile) -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="brand">
@@ -26,42 +23,30 @@
 
         <nav class="sidebar-nav">
             <div class="nav-label">Menu</div>
-            <button class="nav-btn active" data-section="dashboard">
-                <span class="nav-icon">📊</span> Dashboard
-            </button>
-            <button class="nav-btn" data-section="clientes">
-                <span class="nav-icon">👥</span> Clientes
-            </button>
-            <button class="nav-btn" data-section="adicionar">
-                <span class="nav-icon">➕</span> Adicionar Cliente
-            </button>
-            <button class="nav-btn" data-section="relatorios">
-                <span class="nav-icon">📈</span> Relatórios
-            </button>
+            <button class="nav-btn active" data-section="dashboard"><span class="nav-icon">📊</span>Dashboard</button>
+            <button class="nav-btn" data-section="clientes"><span class="nav-icon">👥</span>Clientes</button>
+            <button class="nav-btn" data-section="adicionar"><span class="nav-icon">➕</span>Adicionar Cliente</button>
+            <button class="nav-btn" data-section="relatorios"><span class="nav-icon">📈</span>Relatórios</button>
         </nav>
 
-        <!-- Week switcher -->
-        <div class="week-switcher">
-            <div class="week-switcher-label">Semana</div>
-            <div class="week-tabs">
-                <button class="week-tab active" data-week="atual" id="tab-atual">
-                    📅 Semana<br>Atual
-                </button>
-                <button class="week-tab" data-week="proxima" id="tab-proxima">
-                    🔜 Próxima<br>Semana
-                </button>
+        <div class="grupos-sidebar">
+            <div class="grupos-sidebar-header">
+                <div class="nav-label">Grupos</div>
+                <button class="btn-novo-grupo" id="btn-novo-grupo">+ Novo</button>
+            </div>
+            <div class="grupos-list" id="grupos-list">
+                <button class="grupo-btn-all active" id="btn-grupo-all">🌐 Todos os grupos</button>
+                <!-- grupos dinâmicos aqui -->
             </div>
         </div>
     </aside>
 
-    <!-- MAIN -->
     <div class="main-content">
-        <!-- Header -->
         <header class="top-header">
             <div class="header-left">
                 <button class="hamburger" id="hamburger">☰</button>
                 <span class="page-title" id="page-title">Dashboard</span>
-                <span class="week-badge" id="week-badge">Semana Atual</span>
+                <span class="grupo-badge" id="grupo-badge">Todos</span>
             </div>
             <div class="header-right">
                 <span class="date-chip" id="data-atual"></span>
@@ -73,52 +58,27 @@
             <!-- DASHBOARD -->
             <section id="dashboard" class="section active">
                 <div class="stats-grid">
-                    <div class="stat-card total">
-                        <div class="stat-label">Total</div>
-                        <div class="stat-value" id="total-clientes">0</div>
-                    </div>
-                    <div class="stat-card pagos">
-                        <div class="stat-label">Concluídas</div>
-                        <div class="stat-value" id="total-pagos">0</div>
-                    </div>
-                    <div class="stat-card pendentes">
-                        <div class="stat-label">Pendentes</div>
-                        <div class="stat-value" id="total-pendentes">0</div>
-                    </div>
-                    <div class="stat-card cancelados">
-                        <div class="stat-label">Canceladas</div>
-                        <div class="stat-value" id="total-cancelados">0</div>
-                    </div>
+                    <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value" id="total-clientes">0</div></div>
+                    <div class="stat-card pagos"><div class="stat-label">Concluídas</div><div class="stat-value" id="total-pagos">0</div></div>
+                    <div class="stat-card pendentes"><div class="stat-label">Pendentes</div><div class="stat-value" id="total-pendentes">0</div></div>
+                    <div class="stat-card cancelados"><div class="stat-label">Canceladas</div><div class="stat-value" id="total-cancelados">0</div></div>
                 </div>
-
                 <div class="charts-row">
-                    <div class="chart-card">
-                        <h3>Status</h3>
-                        <div class="chart-wrap">
-                            <canvas id="chartPizza"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <h3>Clientes por Dia</h3>
-                        <div class="chart-wrap">
-                            <canvas id="chartBarra"></canvas>
-                        </div>
-                    </div>
+                    <div class="chart-card"><h3>Status</h3><div class="chart-wrap"><canvas id="chartPizza"></canvas></div></div>
+                    <div class="chart-card"><h3>Clientes por Dia</h3><div class="chart-wrap"><canvas id="chartBarra"></canvas></div></div>
                 </div>
             </section>
 
             <!-- CLIENTES -->
             <section id="clientes" class="section">
                 <div class="section-header">
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <div class="section-header-left">
                         <h2>Clientes</h2>
-                        <span class="week-context-badge" id="clientes-week-badge">📅 Semana Atual</span>
+                        <span class="grupo-context-badge" id="clientes-grupo-badge">🌐 Todos</span>
                     </div>
                     <div class="header-actions">
-                        <input type="text" class="search-input" id="buscar-cliente" placeholder="Buscar cliente...">
-                        <button class="btn-primary" onclick="mudarSecao('adicionar')">
-                            + Adicionar
-                        </button>
+                        <input type="text" class="search-input" id="buscar-cliente" placeholder="Buscar...">
+                        <button class="btn-primary" onclick="mudarSecao('adicionar')">+ Adicionar</button>
                     </div>
                 </div>
                 <div id="lista-clientes-container"></div>
@@ -128,33 +88,16 @@
             <section id="adicionar" class="section">
                 <div class="form-card">
                     <h2>Nova Cliente</h2>
-                    <p class="form-sub">Preencha os dados para cadastrar uma nova cliente</p>
-
-                    <div style="margin-bottom:18px;">
-                        <div class="nav-label" style="margin-bottom:8px;">Semana</div>
-                        <div class="week-select-row">
-                            <button class="week-select-btn selected" data-week="atual" id="form-week-atual">
-                                <span class="ws-emoji">📅</span>
-                                Semana Atual
-                            </button>
-                            <button class="week-select-btn" data-week="proxima" id="form-week-proxima">
-                                <span class="ws-emoji">🔜</span>
-                                Próxima Semana
-                            </button>
-                        </div>
-                    </div>
-
+                    <p class="form-sub">Preencha os dados para cadastrar</p>
                     <form id="form-cliente">
                         <div class="form-group">
                             <label>Nome da Cliente</label>
                             <input type="text" id="nome" placeholder="Ex: Maria Silva" required>
                         </div>
-
                         <div class="form-group">
                             <label>Unidade</label>
                             <input type="text" id="unidade" placeholder="Ex: SP-01" required>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Dia da Semana</label>
@@ -171,7 +114,6 @@
                                 <input type="time" id="horario" required>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label>Status</label>
                             <select id="status" required>
@@ -182,7 +124,12 @@
                                 <option value="Cancelado">❌ Cancelado</option>
                             </select>
                         </div>
-
+                        <div class="form-group">
+                            <label>Grupos</label>
+                            <div class="grupos-checkbox-list" id="form-grupos-list">
+                                <p class="grupos-form-empty">Nenhum grupo criado ainda. Crie um grupo na sidebar.</p>
+                            </div>
+                        </div>
                         <button type="submit" class="btn-submit">Adicionar Cliente</button>
                     </form>
                 </div>
@@ -191,28 +138,16 @@
             <!-- RELATÓRIOS -->
             <section id="relatorios" class="section">
                 <div class="section-header">
-                    <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="section-header-left">
                         <h2>Relatórios</h2>
-                        <span class="week-context-badge" id="relatorios-week-badge">📅 Semana Atual</span>
+                        <span class="grupo-context-badge" id="relatorios-grupo-badge">🌐 Todos</span>
                     </div>
                 </div>
                 <div class="reports-grid">
-                    <div class="report-card">
-                        <h4>Total de Clientes</h4>
-                        <div class="report-val" id="rel-total">0</div>
-                    </div>
-                    <div class="report-card green">
-                        <h4>Concluídas</h4>
-                        <div class="report-val" id="rel-concluido">0</div>
-                    </div>
-                    <div class="report-card yellow">
-                        <h4>Pendências</h4>
-                        <div class="report-val" id="rel-pendente">0</div>
-                    </div>
-                    <div class="report-card blue">
-                        <h4>Taxa de Conversão</h4>
-                        <div class="report-val" id="rel-taxa">0%</div>
-                    </div>
+                    <div class="report-card"><h4>Total de Clientes</h4><div class="report-val" id="rel-total">0</div></div>
+                    <div class="report-card green"><h4>Concluídas</h4><div class="report-val" id="rel-concluido">0</div></div>
+                    <div class="report-card yellow"><h4>Pendências</h4><div class="report-val" id="rel-pendente">0</div></div>
+                    <div class="report-card blue"><h4>Taxa de Conversão</h4><div class="report-val" id="rel-taxa">0%</div></div>
                 </div>
             </section>
 
@@ -220,22 +155,20 @@
     </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL EDITAR CLIENTE -->
 <div class="modal-overlay" id="modal">
     <div class="modal-box">
         <h2>Editar Cliente</h2>
         <p class="modal-subtitle" id="modal-cliente-nome"></p>
-
-        <button class="move-week-btn" id="btn-mover-semana" style="display:none;"></button>
-
-        <div class="nav-label" style="margin-bottom:8px;">Status</div>
+        <div class="modal-section-label">Status</div>
         <select id="modal-status">
             <option value="Pendente">⏳ Pendente</option>
             <option value="Pago">✅ Pago</option>
             <option value="Concluído">✅ Concluído</option>
             <option value="Cancelado">❌ Cancelado</option>
         </select>
-
+        <div class="modal-section-label" style="margin-bottom:8px;">Grupos</div>
+        <div class="grupos-checkbox-list" id="modal-grupos-list" style="margin-bottom:16px;"></div>
         <div class="modal-actions">
             <button class="btn-save" id="btn-salvar-status">Salvar</button>
             <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
@@ -243,6 +176,23 @@
     </div>
 </div>
 
+<!-- MODAL NOVO GRUPO -->
+<div class="modal-novo-grupo" id="modal-novo-grupo">
+    <div class="modal-box">
+        <h2>Novo Grupo</h2>
+        <p class="modal-subtitle">Escolha um nome e uma cor</p>
+        <div class="modal-section-label" style="margin-bottom:8px;">Nome do Grupo</div>
+        <input type="text" class="grupo-nome-input" id="novo-grupo-nome" placeholder='Ex: Grupo A, Quinzenal, VIP...'>
+        <div class="modal-section-label" style="margin-bottom:8px;">Cor</div>
+        <div class="cor-picker" id="cor-picker"></div>
+        <div class="modal-actions">
+            <button class="btn-save" id="btn-salvar-grupo">Criar Grupo</button>
+            <button class="btn-cancel" onclick="fecharModalGrupo()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <script src="script.js"></script>
 </body>
-</html>
+    </html>
+    
