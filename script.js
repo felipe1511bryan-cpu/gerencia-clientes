@@ -75,7 +75,14 @@ function atualizarData() {
 // ========== GRUPOS SUPABASE ==========
 async function carregarGrupos() {
     try {
-        const { data, error } = await supabaseClient.from('grupos').select('*').order('nome');
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+        
+        const { data, error } = await supabaseClient
+            .from('grupos')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('nome');
         if (error) throw error;
         todosGrupos = data || [];
         renderGruposSidebar();
@@ -87,7 +94,17 @@ async function carregarGrupos() {
 
 async function criarGrupo(nome, cor) {
     try {
-        const { error } = await supabaseClient.from('grupos').insert([{ nome: nome.trim(), cor }]);
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+            showToast('❌ Você precisa estar autenticado', 'error');
+            return;
+        }
+        
+        const { error } = await supabaseClient.from('grupos').insert([{ 
+            nome: nome.trim(), 
+            cor,
+            user_id: user.id
+        }]);
         if (error) throw error;
         showToast('✅ Grupo criado!', 'success');
         await carregarGrupos();
@@ -473,11 +490,6 @@ function atualizarGraficos() {
         chartBarra.data.datasets[0].data = DIAS.map(d => c.filter(x=>x.dia===d).length);
         chartBarra.update();
     }
-}
-
-// ========== FORM ==========
-function setupForm() {
-    document.getElementById('form-cliente')?.addEventListener('submit', adicionarCliente);
 }
 
 // ========== HELPERS ==========
