@@ -692,46 +692,51 @@ function extrairProdutosDoTexto(texto) {
     const linhas = texto.split('\n');
     let produtoAtual = null;
     let datas = [];
-    
+
+    const REGEX_DATA = /(\d{1,2})\/(\d{1,2})\/(\d{4})/g;
+
+    function salvarProdutoAtual() {
+        if (produtoAtual && datas.length > 0) {
+            produtos.push(...criarVariacoesDoProduto(produtoAtual, datas));
+        }
+    }
+
     for (let linha of linhas) {
         linha = linha.trim();
         if (!linha) continue;
-        
-        // Detectar nome do produto (começa com emoji 🍺, 🍹, 🥤)
-        if (linha.match(/^[🍺🍹🥤]/)) {
-            // Salvar produto anterior se existir
-            if (produtoAtual && datas.length > 0) {
-                produtos.push(...criarVariacoesDoProdu(produtoAtual, datas));
-            }
-            produtoAtual = linha.replace(/^[🍺🍹🥤]/, '').trim();
-            datas = [];
-        }
-        
-        // Detectar datas no formato DD/MM/YYYY
-        const regex = /(\d{1,2})\/(\d{1,2})\/(\d{4})/g;
+
+        // Extrai todas as datas DD/MM/YYYY presentes na linha
+        const datasDaLinha = [];
         let match;
-        while ((match = regex.exec(linha)) !== null) {
-            const data = `${match[3]}-${String(match[2]).padStart(2, '0')}-${String(match[1]).padStart(2, '0')}`;
-            datas.push(data);
+        REGEX_DATA.lastIndex = 0;
+        while ((match = REGEX_DATA.exec(linha)) !== null) {
+            datasDaLinha.push(`${match[3]}-${String(match[2]).padStart(2, '0')}-${String(match[1]).padStart(2, '0')}`);
         }
-        
-        // Se encontrou data nesta linha, associa ao produto atual
-        if (produtoAtual && linha.includes('/') && !linha.match(/^[🍺🍹🥤]/)) {
-            // Tenta pegar quantidade se mencionada
-            const qtdMatch = linha.match(/(\d+)\s*(?:un|unidades?|caixa|fardo)/i);
-            // Já capturas as datas no regex acima
+
+        // O que sobra da linha depois de remover emoji, datas e separadores é o nome do produto (se houver)
+        const nomeNaLinha = linha
+            .replace(/^[🍺🍹🥤]\s*/u, '')
+            .replace(REGEX_DATA, '')
+            .replace(/[-–—:|]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (nomeNaLinha) {
+            // Linha com nome de produto (ex: "🍺 Skol" ou "Skol - 23/01/2027")
+            salvarProdutoAtual();
+            produtoAtual = nomeNaLinha;
+            datas = [...datasDaLinha];
+        } else if (datasDaLinha.length > 0) {
+            // Linha contém só data(s), associa ao produto atual em construção
+            datas.push(...datasDaLinha);
         }
     }
-    
-    // Salvar último produto
-    if (produtoAtual && datas.length > 0) {
-        produtos.push(...criarVariacoesDoProdu(produtoAtual, datas));
-    }
-    
+
+    salvarProdutoAtual();
     return produtos;
 }
 
-function criarVariacoesDoProdu(nome, datas) {
+function criarVariacoesDoProduto(nome, datas) {
     // Remove duplicatas de datas
     const datasUnicas = [...new Set(datas)];
     
@@ -902,4 +907,4 @@ function showToast(msg, type='success') {
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
-}
+                                    }
