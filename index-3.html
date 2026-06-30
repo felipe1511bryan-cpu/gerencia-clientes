@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Clientes</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+  eruda.init();
+</script>
+</head>
+<body>
+<div class="app-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon">💼</div>
+                <h1>GESTOR</h1>
+            </div>
+            <div class="brand-sub">Gestão de Clientes</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-label">Menu</div>
+            <button class="nav-btn active" data-section="dashboard"><span class="nav-icon">📊</span>Dashboard</button>
+            <button class="nav-btn" data-section="clientes"><span class="nav-icon">👥</span>Clientes</button>
+            <button class="nav-btn" data-section="adicionar"><span class="nav-icon">➕</span>Adicionar Cliente</button>
+            <button class="nav-btn" data-section="produtos"><span class="nav-icon">📦</span>Produtos</button>
+            <button class="nav-btn" data-section="relatorios"><span class="nav-icon">📈</span>Relatórios</button>
+        </nav>
+
+        <div class="grupos-sidebar">
+            <div class="grupos-sidebar-header">
+                <div class="nav-label">Grupos</div>
+                <button class="btn-novo-grupo" id="btn-novo-grupo">+ Novo</button>
+            </div>
+            <div class="grupos-list" id="grupos-list">
+                <button class="grupo-btn-all active" id="btn-grupo-all">🌐 Todos os grupos</button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <button class="hamburger" id="hamburger">☰</button>
+                <span class="page-title" id="page-title">Dashboard</span>
+                <span class="grupo-badge" id="grupo-badge">Todos</span>
+            </div>
+            <div class="header-right">
+                <span class="date-chip" id="data-atual"></span>
+            </div>
+        </header>
+
+        <div class="content-area">
+
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value" id="total-clientes">0</div></div>
+                    <div class="stat-card pagos"><div class="stat-label">Concluídas</div><div class="stat-value" id="total-pagos">0</div></div>
+                    <div class="stat-card pendentes"><div class="stat-label">Pendentes</div><div class="stat-value" id="total-pendentes">0</div></div>
+                    <div class="stat-card cancelados"><div class="stat-label">Canceladas</div><div class="stat-value" id="total-cancelados">0</div></div>
+                </div>
+                <div class="charts-row">
+                    <div class="chart-card"><h3>Status</h3><div class="chart-wrap"><canvas id="chartPizza"></canvas></div></div>
+                    <div class="chart-card"><h3>Clientes por Dia</h3><div class="chart-wrap"><canvas id="chartBarra"></canvas></div></div>
+                </div>
+            </section>
+
+            <!-- CLIENTES -->
+            <section id="clientes" class="section">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <h2>Clientes</h2>
+                        <span class="grupo-context-badge" id="clientes-grupo-badge">🌐 Todos</span>
+                    </div>
+                    <div class="header-actions">
+                        <input type="text" class="search-input" id="buscar-cliente" placeholder="Buscar...">
+                        <button class="btn-primary" onclick="mudarSecao('adicionar')">+ Adicionar</button>
+                    </div>
+                </div>
+                <div id="lista-clientes-container"></div>
+            </section>
+
+            <!-- ADICIONAR -->
+            <section id="adicionar" class="section">
+                <div class="form-card">
+                    <h2>Nova Cliente</h2>
+                    <p class="form-sub">Preencha os dados para cadastrar</p>
+                    <form id="form-cliente">
+                        <div class="form-group">
+                            <label>Nome da Cliente</label>
+                            <input type="text" id="nome" placeholder="Ex: Maria Silva" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidade</label>
+                            <input type="text" id="unidade" placeholder="Ex: SP-01" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Dia da Semana</label>
+                                <select id="dia" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Segunda">Segunda-feira</option>
+                                    <option value="Terça">Terça-feira</option>
+                                    <option value="Quarta">Quarta-feira</option>
+                                    <option value="Quinta">Quinta-feira</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Horário</label>
+                                <input type="time" id="horario" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="status" required>
+                                <option value="">Selecione...</option>
+                                <option value="Pendente">⏳ Pendente</option>
+                                <option value="Pago">✅ Pago</option>
+                                <option value="Concluído">✅ Concluído</option>
+                                <option value="Cancelado">❌ Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Grupos</label>
+                            <div class="grupos-checkbox-list" id="form-grupos-list">
+                                <p class="grupos-form-empty">Nenhum grupo criado ainda. Crie um grupo na sidebar.</p>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit">Adicionar Cliente</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PRODUTOS -->
+            <section id="produtos" class="section">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <h2>Produtos</h2>
+                    </div>
+                </div>
+                <div class="form-card">
+                    <h3>Adicionar Novo Produto</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nome do Produto</label>
+                            <input type="text" id="produto-nome" placeholder="Ex: Skol">
+                        </div>
+                        <div class="form-group">
+                            <label>Quantidade em Loja</label>
+                            <input type="number" id="produto-loja" placeholder="0" min="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Quantidade em Depósito</label>
+                            <input type="number" id="produto-deposito" placeholder="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Data de Vencimento</label>
+                            <input type="date" id="produto-vencimento">
+                        </div>
+                    </div>
+                    <button id="btn-adicionar-produto" class="btn-submit">Adicionar Produto</button>
+                </div>
+
+                <div class="export-actions">
+                    <button class="btn-export whatsapp" onclick="gerarMensagemWhatsApp()">📱 Exportar WhatsApp</button>
+                    <button class="btn-export pdf" onclick="gerarPDF()">📄 Gerar PDF</button>
+                    <button class="btn-export" style="background:#3b82f6" onclick="abrirModalImportar()">⬆️ Importar Validades</button>
+                </div>
+
+                <div id="produtos-container"></div>
+            </section>
+
+            <!-- RELATÓRIOS -->
+            <section id="relatorios" class="section">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <h2>Relatórios</h2>
+                        <span class="grupo-context-badge" id="relatorios-grupo-badge">🌐 Todos</span>
+                    </div>
+                </div>
+                <div class="reports-grid">
+                    <div class="report-card"><h4>Total de Clientes</h4><div class="report-val" id="rel-total">0</div></div>
+                    <div class="report-card green"><h4>Concluídas</h4><div class="report-val" id="rel-concluido">0</div></div>
+                    <div class="report-card yellow"><h4>Pendências</h4><div class="report-val" id="rel-pendente">0</div></div>
+                    <div class="report-card blue"><h4>Taxa de Conversão</h4><div class="report-val" id="rel-taxa">0%</div></div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-box">
+        <h2>Editar Cliente</h2>
+        <p class="modal-subtitle" id="modal-cliente-nome"></p>
+        <div class="modal-section-label">Status</div>
+        <select id="modal-status">
+            <option value="Pendente">⏳ Pendente</option>
+            <option value="Pago">✅ Pago</option>
+            <option value="Concluído">✅ Concluído</option>
+            <option value="Cancelado">❌ Cancelado</option>
+        </select>
+        <div class="modal-section-label" style="margin-bottom:8px;">Grupos</div>
+        <div class="grupos-checkbox-list" id="modal-grupos-list" style="margin-bottom:16px;"></div>
+        <div class="modal-actions">
+            <button class="btn-save" id="btn-salvar-status">Salvar</button>
+            <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NOVO GRUPO -->
+<div class="modal-novo-grupo" id="modal-novo-grupo">
+    <div class="modal-box">
+        <h2>Novo Grupo</h2>
+        <p class="modal-subtitle">Escolha um nome e uma cor</p>
+        <div class="modal-section-label" style="margin-bottom:8px;">Nome do Grupo</div>
+        <input type="text" class="grupo-nome-input" id="novo-grupo-nome" placeholder='Ex: Grupo A, Quinzenal, VIP...'>
+        <div class="modal-section-label" style="margin-bottom:8px;">Cor</div>
+        <div class="cor-picker" id="cor-picker"></div>
+        <div class="modal-actions">
+            <button class="btn-save" id="btn-salvar-grupo">Criar Grupo</button>
+            <button class="btn-cancel" onclick="fecharModalGrupo()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL IMPORTAR VALIDADES -->
+<div class="modal-overlay" id="modal-importar-validades">
+    <div class="modal-box" style="max-width:600px;max-height:80vh;overflow-y:auto">
+        <h2>Importar Validades em Massa</h2>
+        <p class="modal-subtitle">Cole o texto com as validades e produtos</p>
+        <textarea id="textarea-importar" placeholder="Cole aqui o texto com produtos e validades..." style="width:100%;height:300px;padding:12px;border:1px solid #444;border-radius:6px;background:#222;color:#fff;font-family:monospace;font-size:12px;resize:vertical;margin-bottom:16px;"></textarea>
+        <div style="font-size:12px;color:#7a7a8c;margin-bottom:16px;background:#1a1a26;padding:10px;border-radius:6px;">
+            <strong>Formato aceito:</strong><br>
+            • Produtos podem começar com 🍺 🍹 🥤<br>
+            • Datas no formato DD/MM/YYYY<br>
+            • Exemplo: "Skol - 23/01/2027"
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" id="btn-confirmar-importacao">✅ Importar</button>
+            <button class="btn-cancel" onclick="fecharModalImportar()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR PRODUTO -->
+<div class="modal-overlay" id="modal-editar-produto">
+    <div class="modal-box">
+        <h2>Editar Produto</h2>
+        <p class="modal-subtitle" id="edit-produto-nome"></p>
+        <div class="modal-section-label">Quantidade em Loja</div>
+        <input type="number" id="edit-produto-loja" min="0" style="width:100%;padding:10px;border:1px solid #444;border-radius:6px;background:#222;color:#fff;margin-bottom:16px;">
+        <div class="modal-section-label">Quantidade em Depósito</div>
+        <input type="number" id="edit-produto-deposito" min="0" style="width:100%;padding:10px;border:1px solid #444;border-radius:6px;background:#222;color:#fff;margin-bottom:16px;">
+        <div class="modal-section-label">Data de Vencimento</div>
+        <input type="date" id="edit-produto-vencimento" style="width:100%;padding:10px;border:1px solid #444;border-radius:6px;background:#222;color:#fff;margin-bottom:16px;">
+        <div class="modal-actions">
+            <button class="btn-save" id="btn-salvar-produto">Salvar</button>
+            <button class="btn-cancel" onclick="fecharModalProduto()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+    </html>
