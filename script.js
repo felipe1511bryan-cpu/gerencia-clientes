@@ -1,15 +1,15 @@
 // ========== SUPABASE ==========
 const SUPABASE_URL = 'https://yxbizwnfqanlojydjanw.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4Yml6d25mcWFubG9qeWRqYW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDI4NzEsImV4cCI6MjA5NzgxODg3MX0.QlH2vi52_6d-UzwxInKWOtRSwuPVEUnWOV8UbM_fHIM';
-let supabaseClient = null;
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4Yml6d25mcWFubG9qeWRqYW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDI4NzEsImV4cCI6MjA5NzgxODg3MX0.QlH2vi52_6d-UzwxInKWOtRSwuPVEUnWOV8UbM_fHIM';let supabaseClient = null;
 if (typeof window !== 'undefined' && window.supabase) {
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
 // ========== STATE ==========
 let todosClientes = [];
-let todosGrupos = [];     // [{id, nome, cor}]
-let grupoAtivo = null;    // null = todos
+let todosProdutos = [];
+let todosGrupos = [];
+let grupoAtivo = null;
 let clienteAtualId = null;
 let chartPizza = null;
 let chartBarra = null;
@@ -22,7 +22,6 @@ const CORES = ['#c9a84c','#2dbd7a','#3b82f6','#8b5cf6','#d94040','#e8a020','#ec4
 document.addEventListener('DOMContentLoaded', async () => {
     if (!supabaseClient) { showToast('❌ Supabase não conectado', 'error'); return; }
     
-    // Autenticação anônima
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) {
@@ -42,10 +41,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupBusca();
     setupModal();
     setupModalGrupo();
+    setupModalProduto();
     setupMobile();
     renderCorPicker();
     await carregarGrupos();
     await carregarClientes();
+    await carregarProdutos();
 });
 
 // ========== NAVEGAÇÃO ==========
@@ -63,7 +64,7 @@ function mudarSecao(secao) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(secao)?.classList.add('active');
     document.querySelector(`.nav-btn[data-section="${secao}"]`)?.classList.add('active');
-    const titulos = { dashboard:'Dashboard', clientes:'Clientes', adicionar:'Adicionar Cliente', relatorios:'Relatórios' };
+    const titulos = { dashboard:'Dashboard', clientes:'Clientes', adicionar:'Adicionar Cliente', produtos:'Produtos', relatorios:'Relatórios' };
     document.getElementById('page-title').textContent = titulos[secao] || 'Gestor';
 }
 
@@ -89,10 +90,7 @@ function atualizarData() {
 // ========== GRUPOS SUPABASE ==========
 async function carregarGrupos() {
     try {
-        const { data, error } = await supabaseClient
-            .from('grupos')
-            .select('*')
-            .order('nome');
+        const { data, error } = await supabaseClient.from('grupos').select('*').order('nome');
         if (error) throw error;
         todosGrupos = data || [];
         renderGruposSidebar();
@@ -104,10 +102,7 @@ async function carregarGrupos() {
 
 async function criarGrupo(nome, cor) {
     try {
-        const { error } = await supabaseClient.from('grupos').insert([{ 
-            nome: nome.trim(), 
-            cor
-        }]);
+        const { error } = await supabaseClient.from('grupos').insert([{ nome: nome.trim(), cor }]);
         if (error) throw error;
         showToast('✅ Grupo criado!', 'success');
         await carregarGrupos();
@@ -119,7 +114,6 @@ async function criarGrupo(nome, cor) {
 async function deletarGrupo(id) {
     if (!confirm('Deletar este grupo? As clientes não serão removidas.')) return;
     try {
-        // Remove grupo do array de grupos de cada cliente
         const afetadas = todosClientes.filter(c => (c.grupos || []).includes(id));
         for (const c of afetadas) {
             const novosGrupos = (c.grupos || []).filter(g => g !== id);
@@ -140,7 +134,6 @@ function renderGruposSidebar() {
     const list = document.getElementById('grupos-list');
     const nomeGrupoAtivo = grupoAtivo ? (todosGrupos.find(g => g.id === grupoAtivo)?.nome || 'Grupo') : 'Todos';
 
-    // Badge no header
     document.getElementById('grupo-badge').textContent = nomeGrupoAtivo;
     document.getElementById('clientes-grupo-badge').textContent = grupoAtivo ? '🏷️ ' + nomeGrupoAtivo : '🌐 Todos';
     document.getElementById('relatorios-grupo-badge').textContent = grupoAtivo ? '🏷️ ' + nomeGrupoAtivo : '🌐 Todos';
@@ -163,7 +156,6 @@ function renderGruposSidebar() {
 
     list.innerHTML = btnAll + btnGrupos + empty;
 
-    // eventos
     document.getElementById('btn-grupo-all').addEventListener('click', () => {
         grupoAtivo = null;
         renderGruposSidebar();
@@ -191,62 +183,35 @@ function renderGruposForm(selecionados = []) {
     }
     el.innerHTML = todosGrupos.map(g => {
         const checked = selecionados.includes(g.id);
-        return `
-        <label class="grupo-checkbox-item ${checked ? 'checked' : ''}" data-grupo-id="${g.id}">
+        return `<label class="grupo-checkbox">
             <input type="checkbox" value="${g.id}" ${checked ? 'checked' : ''}>
-            <div class="grupo-checkbox-dot" style="background:${g.cor}"></div>
-            <span class="grupo-checkbox-name">${escapeHtml(g.nome)}</span>
+            <span style="border-color:${g.cor};background:${g.cor}18;color:${g.cor}">${escapeHtml(g.nome)}</span>
         </label>`;
     }).join('');
-
-    el.querySelectorAll('.grupo-checkbox-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            if (e.target.tagName === 'INPUT') {
-                this.classList.toggle('checked', e.target.checked);
-            }
-        });
-    });
 }
 
 function renderGruposModal(selecionados = []) {
     const el = document.getElementById('modal-grupos-list');
     if (!el) return;
-    if (todosGrupos.length === 0) {
-        el.innerHTML = '<p class="grupos-form-empty">Nenhum grupo criado.</p>';
-        return;
-    }
     el.innerHTML = todosGrupos.map(g => {
         const checked = selecionados.includes(g.id);
-        return `
-        <label class="grupo-checkbox-item ${checked ? 'checked' : ''}" data-grupo-id="${g.id}">
+        return `<label class="grupo-checkbox">
             <input type="checkbox" value="${g.id}" ${checked ? 'checked' : ''}>
-            <div class="grupo-checkbox-dot" style="background:${g.cor}"></div>
-            <span class="grupo-checkbox-name">${escapeHtml(g.nome)}</span>
+            <span style="border-color:${g.cor};background:${g.cor}18;color:${g.cor}">${escapeHtml(g.nome)}</span>
         </label>`;
     }).join('');
-
-    el.querySelectorAll('.grupo-checkbox-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            if (e.target.tagName === 'INPUT') {
-                this.classList.toggle('checked', e.target.checked);
-            }
-        });
-    });
 }
 
 function getGruposSelecionados(containerId) {
-    return Array.from(document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`))
-        .map(cb => parseInt(cb.value));
+    const el = document.getElementById(containerId);
+    if (!el) return [];
+    return Array.from(el.querySelectorAll('input:checked')).map(x => parseInt(x.value));
 }
 
-// ========== SUPABASE CLIENTES ==========
+// ========== CLIENTES SUPABASE ==========
 async function carregarClientes() {
     try {
-        const { data, error } = await supabaseClient
-            .from('clientes')
-            .select('*')
-            .order('dia')
-            .order('horario');
+        const { data, error } = await supabaseClient.from('clientes').select('*').order('dia').order('horario');
         if (error) throw error;
         todosClientes = data || [];
         atualizarTudo();
@@ -254,19 +219,6 @@ async function carregarClientes() {
         console.error(err);
         showToast('Erro ao carregar clientes', 'error');
     }
-}
-
-function clientesFiltrados() {
-    if (!grupoAtivo) return todosClientes;
-    return todosClientes.filter(c => (c.grupos || []).includes(grupoAtivo));
-}
-
-function atualizarTudo() {
-    renderClientes();
-    atualizarEstatisticas();
-    atualizarGraficos();
-    atualizarRelatorios();
-    renderGruposSidebar();
 }
 
 async function adicionarCliente(e) {
@@ -293,13 +245,22 @@ async function adicionarCliente(e) {
     }
 }
 
-async function salvarEdicaoCliente() {
-    if (!clienteAtualId) return;
-    const status = document.getElementById('modal-status').value;
-    const grupos = getGruposSelecionados('modal-grupos-list');
+async function deletarCliente(id) {
+    if (!confirm('Deletar esta cliente?')) return;
     try {
-        const { error } = await supabaseClient.from('clientes').update({ status, grupos }).eq('id', clienteAtualId);
-        if (error) throw error;
+        await supabaseClient.from('clientes').delete().eq('id', id);
+        showToast('Cliente removida', 'success');
+        await carregarClientes();
+    } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+    }
+}
+
+async function salvarEdicaoCliente() {
+    try {
+        const novoStatus = document.getElementById('modal-status').value;
+        const grupos = getGruposSelecionados('modal-grupos-list');
+        await supabaseClient.from('clientes').update({ status: novoStatus, grupos }).eq('id', clienteAtualId);
         showToast('✅ Cliente atualizada!', 'success');
         fecharModal();
         await carregarClientes();
@@ -308,22 +269,147 @@ async function salvarEdicaoCliente() {
     }
 }
 
-async function deletarCliente(id) {
-    if (!confirm('Deletar esta cliente?')) return;
+// ========== PRODUTOS SUPABASE ==========
+async function carregarProdutos() {
     try {
-        const { error } = await supabaseClient.from('clientes').delete().eq('id', id);
+        const { data, error } = await supabaseClient.from('produtos').select('*').order('nome');
         if (error) throw error;
-        showToast('🗑️ Cliente removida', 'success');
-        await carregarClientes();
+        todosProdutos = data || [];
+        verificarVencimentos();
+        renderProdutos();
+    } catch (err) {
+        console.error('Erro produtos:', err);
+    }
+}
+
+async function adicionarProduto() {
+    const nome = document.getElementById('produto-nome')?.value.trim();
+    const loja = parseInt(document.getElementById('produto-loja')?.value) || 0;
+    const deposito = parseInt(document.getElementById('produto-deposito')?.value) || 0;
+    const vencimento = document.getElementById('produto-vencimento')?.value;
+    
+    if (!nome || !vencimento) {
+        showToast('Preencha nome e data de vencimento', 'error');
+        return;
+    }
+    
+    try {
+        const { error } = await supabaseClient.from('produtos').insert([{ 
+            nome, 
+            loja, 
+            deposito,
+            vencimento
+        }]);
+        if (error) throw error;
+        showToast('✅ Produto adicionado!', 'success');
+        document.getElementById('produto-nome').value = '';
+        document.getElementById('produto-loja').value = '0';
+        document.getElementById('produto-deposito').value = '0';
+        document.getElementById('produto-vencimento').value = '';
+        await carregarProdutos();
     } catch (err) {
         showToast('Erro: ' + err.message, 'error');
     }
 }
 
-// ========== RENDER CLIENTES ==========
+async function deletarProduto(id) {
+    if (!confirm('Deletar este produto?')) return;
+    try {
+        await supabaseClient.from('produtos').delete().eq('id', id);
+        showToast('Produto removido', 'success');
+        await carregarProdutos();
+    } catch (err) {
+        showToast('Erro: ' + err.message, 'error');
+    }
+}
+
+function verificarVencimentos() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    todosProdutos.forEach(p => {
+        const dataVenc = new Date(p.vencimento);
+        dataVenc.setHours(0, 0, 0, 0);
+        const diasRestantes = Math.floor((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes < 0) {
+            p.status = 'vencido';
+            p.dias = 'VENCIDO';
+        } else if (diasRestantes <= 20) {
+            p.status = 'aviso';
+            p.dias = `${diasRestantes}d`;
+        } else {
+            p.status = 'ok';
+            p.dias = `${diasRestantes}d`;
+        }
+    });
+}
+
+function renderProdutos() {
+    const container = document.getElementById('produtos-container');
+    if (!container) return;
+    
+    if (todosProdutos.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><h3>Nenhum produto</h3><p>Adicione produtos para começar.</p></div>';
+        return;
+    }
+    
+    let html = '';
+    todosProdutos.forEach(p => {
+        const total = p.loja + p.deposito;
+        const statusClass = p.status || 'ok';
+        html += `<div class="produto-card ${statusClass}">
+            <div class="produto-header">
+                <div class="produto-nome">${escapeHtml(p.nome)}</div>
+                <div class="produto-dias ${statusClass}">${p.dias || '—'}</div>
+            </div>
+            <div class="produto-info">
+                <div class="produto-info-item">
+                    <span class="label">Loja</span>
+                    <span class="value">${p.loja}</span>
+                </div>
+                <div class="produto-info-item">
+                    <span class="label">Depósito</span>
+                    <span class="value">${p.deposito}</span>
+                </div>
+                <div class="produto-info-item total">
+                    <span class="label">Total</span>
+                    <span class="value">${total}</span>
+                </div>
+            </div>
+            <div class="produto-actions">
+                <button class="btn-icon" onclick="deletarProduto(${p.id})">🗑️</button>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function setupModalProduto() {
+    const btn = document.getElementById('btn-adicionar-produto');
+    if (btn) {
+        btn.addEventListener('click', adicionarProduto);
+    }
+}
+
+// ========== RENDERIZAR CLIENTES ==========
+function atualizarTudo() {
+    renderClientes();
+    atualizarEstatisticas();
+    atualizarRelatorios();
+    atualizarGraficos();
+}
+
+function clientesFiltrados() {
+    let clientes = todosClientes;
+    if (grupoAtivo) {
+        clientes = clientes.filter(c => (c.grupos || []).includes(grupoAtivo));
+    }
+    return clientes;
+}
+
 function renderClientes(filtro = '') {
     const container = document.getElementById('lista-clientes-container');
-    if (!container) return;
     let clientes = clientesFiltrados();
     if (filtro) {
         const t = filtro.toLowerCase();
@@ -430,10 +516,8 @@ function renderCorPicker() {
             picker.querySelectorAll('.cor-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
         });
-    });
-}
-
-function abrirModalGrupo() {
+            }
+                                                   function abrirModalGrupo() {
     document.getElementById('modal-novo-grupo').classList.add('open');
     document.getElementById('novo-grupo-nome').focus();
 }
@@ -504,6 +588,117 @@ function setupForm() {
     document.getElementById('form-cliente')?.addEventListener('submit', adicionarCliente);
 }
 
+// ========== EXPORTAR WHATSAPP ==========
+function gerarMensagemWhatsApp() {
+    if (todosProdutos.length === 0) {
+        showToast('Nenhum produto para exportar', 'error');
+        return;
+    }
+    
+    const totalGeral = todosProdutos.reduce((sum, p) => sum + p.loja + p.deposito, 0);
+    let mensagem = `📦 *RELATÓRIO DE PRODUTOS*\n\n`;
+    mensagem += `*Total Geral: ${totalGeral}*\n\n`;
+    mensagem += `📍 *Separado por Produto:*\n`;
+    
+    todosProdutos.forEach(p => {
+        const total = p.loja + p.deposito;
+        const statusEmoji = p.status === 'vencido' ? '❌' : p.status === 'aviso' ? '⚠️' : '✅';
+        mensagem += `${statusEmoji} ${escapeHtml(p.nome)}\n  Loja: ${p.loja} | Depósito: ${p.deposito} | Total: ${total}\n`;
+    });
+    
+    const texto = encodeURIComponent(mensagem);
+    window.open(`https://wa.me/?text=${texto}`, '_blank');
+    showToast('✅ Mensagem preparada no WhatsApp', 'success');
+}
+
+// ========== GERAR PDF ==========
+function gerarPDF() {
+    if (todosProdutos.length === 0) {
+        showToast('Nenhum produto para gerar PDF', 'error');
+        return;
+    }
+    
+    const totalGeral = todosProdutos.reduce((sum, p) => sum + p.loja + p.deposito, 0);
+    
+    const html = `
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Relatório de Produtos</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .header h1 { color: #333; margin: 0; font-size: 28px; }
+                .header p { color: #666; margin: 5px 0; }
+                .summary { background: #c9a84c; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+                .summary h2 { margin: 0; font-size: 20px; }
+                .summary p { margin: 8px 0; font-size: 14px; }
+                table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 20px; }
+                th { background: #333; color: white; padding: 12px; text-align: left; font-weight: bold; }
+                td { padding: 12px; border-bottom: 1px solid #ddd; }
+                tr:hover { background: #f9f9f9; }
+                .status-ok { color: #2dbd7a; font-weight: bold; }
+                .status-aviso { color: #e8a020; font-weight: bold; }
+                .status-vencido { color: #d94040; font-weight: bold; }
+                .total-row { background: #f0f0f0; font-weight: bold; }
+                .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📦 Relatório de Produtos</h1>
+                <p>Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            </div>
+            
+            <div class="summary">
+                <h2>Total Geral: ${totalGeral} unidades</h2>
+                <p>Produtos em estoque (Loja + Depósito)</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Loja</th>
+                        <th>Depósito</th>
+                        <th>Total</th>
+                        <th>Vencimento</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${todosProdutos.map(p => {
+                        const total = p.loja + p.deposito;
+                        const statusClass = p.status === 'vencido' ? 'status-vencido' : p.status === 'aviso' ? 'status-aviso' : 'status-ok';
+                        const statusText = p.status === 'vencido' ? 'VENCIDO' : p.status === 'aviso' ? `${p.dias}` : `${p.dias}`;
+                        return `
+                            <tr>
+                                <td>${escapeHtml(p.nome)}</td>
+                                <td>${p.loja}</td>
+                                <td>${p.deposito}</td>
+                                <td><strong>${total}</strong></td>
+                                <td>${new Date(p.vencimento).toLocaleDateString('pt-BR')}</td>
+                                <td><span class="${statusClass}">${statusText}</span></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            
+            <div class="footer">
+                <p>Este relatório foi gerado automaticamente pelo GESTOR</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    const novaJanela = window.open('', '_blank');
+    novaJanela.document.write(html);
+    novaJanela.document.close();
+    novaJanela.print();
+    showToast('✅ PDF aberto para impressão', 'success');
+}
+
 // ========== HELPERS ==========
 function getIconeStatus(s) { return {'Pago':'✅','Concluído':'✅','Pendente':'⏳','Cancelado':'❌'}[s]||'❓'; }
 function setEl(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
@@ -515,4 +710,5 @@ function showToast(msg, type='success') {
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
-}
+            }
+    
